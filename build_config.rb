@@ -1,9 +1,20 @@
-# The default build configuration file was moved to `build_config/default.rb`.
-#
-# Recommended way to customize the build configuration is:
-#  * copy `default.rb` (or any config file) to a new file (e.g. `myconfig.rb`)
-#  * edit `myconfig.rb`.
-#  * `rake MRUBY_CONFIG=/path/to/myconfig.rb` to compile and test.
-#  * or `rake MRUBY_CONFIG=myconfig` if your configuration file is in the `build_config` directory.
-#  * (optional) submit your configuration as a pull-request if it's useful for others
-raise "The default configuration was moved to `build_config/default.rb`"
+MRuby::Build.new do |conf|
+  toolchain :clang
+
+  conf.gem core: "mruby-bin-mruby"
+  conf.gem core: "mruby-eval"
+  conf.gem core: "mruby-struct"
+  conf.gem core: "mruby-errno"
+  conf.gem core: "mruby-string-ext"
+  conf.gem core: "mruby-fiber"
+  conf.gem core: "mruby-enumerator"
+  conf.gem core: "mruby-hash-ext"
+  conf.gem core: "mruby-kernel-ext"
+  conf.gem core: "mruby-object-ext"
+  conf.gem core: "mruby-metaprog"
+  conf.gem core: "mruby-io"
+  conf.gem core: "mruby-time"
+  conf.gem core: "mruby-dir"
+  conf.gem :gemdir => "#{__dir__}/mrbgems/mruby-process"
+  conf.gem :gemdir => "#{__dir__}/mrbgems/mruby-file-stat"
+end
