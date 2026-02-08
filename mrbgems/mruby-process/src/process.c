@@ -3,9 +3,13 @@
 #include <mruby/string.h>
 #include <mruby/variable.h>
 
+#ifdef _WIN32
+#include <process.h>
+#else
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#endif
 
 static struct RClass *process_status_class = NULL;
 
@@ -33,12 +37,19 @@ process_spawn(mrb_state *mrb, mrb_value self)
   }
   cargv[argc] = NULL;
 
+#ifdef _WIN32
+  intptr_t pid = _spawnvp(_P_NOWAIT, cargv[0], (const char * const *)cargv);
+#else
   pid_t pid = fork();
   if (pid == 0) {
     execvp(cargv[0], cargv);
     _exit(127);
   }
+#endif
   mrb_free(mrb, cargv);
+  if (pid < 0) {
+    return mrb_nil_value();
+  }
   return mrb_fixnum_value((mrb_int)pid);
 }
 
@@ -48,13 +59,19 @@ process_waitpid2(mrb_state *mrb, mrb_value self)
   mrb_int pid;
   mrb_get_args(mrb, "i", &pid);
 
+#ifdef _WIN32
+  int exitstatus = 0;
+  intptr_t r = _cwait(&exitstatus, (intptr_t)pid, 0);
+  if (r < 0) {
+    return mrb_nil_value();
+  }
+#else
   int status = 0;
   pid_t r = waitpid((pid_t)pid, &status, 0);
   if (r < 0) {
     return mrb_nil_value();
   }
 
-  mrb_value st = mrb_obj_new(mrb, process_status_class, 0, NULL);
   int exitstatus = 0;
   if (WIFEXITED(status)) {
     exitstatus = WEXITSTATUS(status);
@@ -63,6 +80,8 @@ process_waitpid2(mrb_state *mrb, mrb_value self)
   } else {
     exitstatus = status;
   }
+#endif
+  mrb_value st = mrb_obj_new(mrb, process_status_class, 0, NULL);
   mrb_iv_set(mrb, st, mrb_intern_lit(mrb, "@exitstatus"), mrb_fixnum_value(exitstatus));
 
   mrb_value ary = mrb_ary_new_capa(mrb, 2);
