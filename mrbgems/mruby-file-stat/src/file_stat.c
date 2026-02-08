@@ -50,7 +50,14 @@ file_stat_common(mrb_state *mrb, int use_lstat)
   mrb_get_args(mrb, "z", &path);
 
   struct stat st;
-  int r = use_lstat ? lstat(path, &st) : stat(path, &st);
+  int r = 0;
+#if defined(_WIN32)
+  /* Windows does not provide POSIX lstat(2); emulate with stat(2). */
+  (void)use_lstat;
+  r = stat(path, &st);
+#else
+  r = use_lstat ? lstat(path, &st) : stat(path, &st);
+#endif
   if (r != 0) {
     return mrb_nil_value();
   }
